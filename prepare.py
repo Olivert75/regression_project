@@ -1,10 +1,11 @@
 import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.feature_selection import SelectKBest, f_regression, RFE
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler
 from sklearn.linear_model import LinearRegression
 
 
@@ -65,7 +66,7 @@ def train_validate_test(df, target):
     a validate, which is 24% of the entire dataframe,
     and a train, which is 56% of the entire dataframe. 
     It then splits each of the 3 samples into a dataframe with independent variables
-    and a series with the dependent, or target variable. 
+    and a series with the dependent, or target variable. Then print the shape of 3 dataframes (Train, Validate and Test)
     The function returns train, validate, test sets and also another 3 dataframes and 3 series:
     X_train (df) & y_train (series), X_validate & y_validate, X_test & y_test. 
     '''
@@ -88,6 +89,10 @@ def train_validate_test(df, target):
     X_test = test.drop(columns=[target])
     y_test = test[target]
     
+    print(f'X_train -> {X_train.shape}               y_train->{y_train.shape}')
+    print(f'X_validate -> {X_validate.shape}         y_validate->{y_validate.shape} ')        
+    print(f'X_test -> {X_test.shape}                  y_test>{y_test.shape}') 
+
     return train, validate, test, X_train, y_train, X_validate, y_validate, X_test, y_test
 
 
@@ -150,8 +155,47 @@ def min_max_scale(X_train, X_validate, X_test, numeric_cols):
     
     return X_train_scaled, X_validate_scaled, X_test_scaled
 
+def scaled_df ( train_df , validate_df, test_df, scaler):
+    '''
+    Take in a 3 df and a type of scaler that you  want to  use. it will scale all columns
+    except object type. Fit a scaler only in train and tramnsform in train, validate and test.
+    returns  new dfs with the scaled columns.
+    scaler : MinMaxScaler() or RobustScaler(), StandardScaler() 
+    Example:
+    scaled_df( X_train , X_validate , X_test, RobustScaler())
     
+    '''
+    #get all columns except object type
+    columns = train_df.select_dtypes(exclude='object').columns.tolist()
+    
+    # fit our scaler
+    scaler.fit(train_df[columns])
+    # get our scaled arrays
+    train_scaled = scaler.transform(train_df[columns])
+    validate_scaled= scaler.transform(validate_df[columns])
+    test_scaled= scaler.transform(test_df[columns])
 
+    # convert arrays to dataframes
+    train_scaled_df = pd.DataFrame(train_scaled, columns=columns).set_index([train_df.index.values])
+    validate_scaled_df = pd.DataFrame(validate_scaled, columns=columns).set_index([validate_df.index.values])
+    test_scaled_df = pd.DataFrame(test_scaled, columns=columns).set_index([test_df.index.values])
+
+    #plot
+    for col in columns: 
+        plt.figure(figsize=(13, 6))
+        plt.subplot(121)
+        plt.hist(train_df[col], ec='black')
+        plt.title('Original')
+        plt.xlabel(col)
+        plt.ylabel("counts")
+        plt.subplot(122)
+        plt.hist(train_scaled_df[col],  ec='black')
+        plt.title('Scaled')
+        plt.xlabel(col)
+        plt.ylabel("counts")
+
+    return train_scaled_df, validate_scaled_df, test_scaled_df
+    
 def clean_zillow_taxes(df):
     '''
     this function takes in an unclean zillow df and does the following:
