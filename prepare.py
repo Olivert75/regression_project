@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.feature_selection import SelectKBest, f_regression, RFE
@@ -18,40 +19,68 @@ def remove_outlier(df):
     new_df = df[(np.abs(stats.zscore(df['beds'])) < 3)]
     new_df = df[(np.abs(stats.zscore(df['tax_value'])) < 3)]
     return new_df
+
+def clean_zillow (df):
+    '''
+    Takes in a df and drops duplicates, nulls,rename columns, parcelid is changed to string.
+    Return a clean df
+    '''
     
-def clean_zillow(df):
+    # drop duplicates
+    df = df.drop_duplicates()
+    #drop nulls
+    df = df.dropna(how='any',axis=0)
+    #  change parcelid to string, it is a uniqure identifier for parcels lots
+    df['parcelid'] = df['parcelid'].astype('str')
+    df['fips'] = df['fips'].astype('int')
+    # rename columns
+    df = df.rename(columns={'parcelid':'parcel_id',
+                            'calculatedfinishedsquarefeet': 'sqft',
+                            'bathroomcnt': 'number_bathroom',
+                            'bedroomcnt': 'number_bedroom',
+                            'taxvaluedollarcnt':'tax_value',
+                            'taxamount': 'tax_amount',
+                            'fips':'geographic_code'})
+
+    return df
+
+def clean_zillow_data(df):
     '''
     this function takes in an unclean zillow df and does the following:
-    1.) keeps only columns we need are considering. 'parcelid', 'calculatedfinishedsquarefeet', 'bathroomcnt', 'bedroomcnt',             'taxvaluedollarcnt', 'yearbuilt','fips'
+    1.) keeps only columns we need are considering. 'calculatedfinishedsquarefeet', 'bathroomcnt', 'bedroomcnt', 'taxvaluedollarcnt', 'yearbuilt','fips'
     2.) drops nulls
     3.) renames columns for ease of use.
     4.) creates new columns that we may use.
     '''
     #select features for df
-    features = ['parcelid', 'calculatedfinishedsquarefeet', 'bathroomcnt', 'bedroomcnt', 'taxvaluedollarcnt', 'yearbuilt','fips']
+    features = ['parcelid','calculatedfinishedsquarefeet', 'bathroomcnt', 'bedroomcnt', 'taxvaluedollarcnt', 'yearbuilt','fips', 'taxamount']
     df = df[features]
+    #  change parcelid to string, it is a uniqure identifier for parcels lots
+    df['parcelid'] = df['parcelid'].astype('str')
+    df['fips'] = df['fips'].astype('int')
     #for the yearbuilt column, fill in nulls with 2017.
     df['yearbuilt'].fillna(2017, inplace = True)
     #create a new column named 'age', which is 2017 minus the yearbuilt
     df['age'] = 2017-df['yearbuilt']
-    
+    #calculate tax_rate by having taxamount divided by taxvaluedollarcnt
+    df['tax_rate'] = df['taxamount'] / df['taxvaluedollarcnt']
     #drop duplicates in parcelid
     df = df.drop_duplicates(subset=['parcelid'])
-    
     #rename columns for easier use
-    df = df.rename(columns={
-                            'parcelid': 'parcel_id',
+    df = df.rename(columns={'parcelid':'parcel_id',
                             'calculatedfinishedsquarefeet': 'sqft',
-                            'bathroomcnt': 'baths',
-                            'bedroomcnt': 'beds',
-                            'taxvaluedollarcnt':'tax_value'
+                            'bathroomcnt': 'number_bathroom',
+                            'bedroomcnt': 'number_bedroom',
+                            'taxvaluedollarcnt':'tax_value',
+                            'taxamount': 'tax_amount',
+                            'fips':'geographic_code'
         
     })
     
     #set index
     df = df.set_index('parcel_id')
     #drop nulls in sqft and tax_value
-    df = df.dropna(subset=['sqft','tax_value'])
+    df = df.dropna(subset=['sqft','tax_value','tax_amount'])
     #drop year_built, we can just use age.
     df = df.drop(columns=['yearbuilt'])
     
@@ -196,45 +225,33 @@ def scaled_df ( train_df , validate_df, test_df, scaler):
 
     return train_scaled_df, validate_scaled_df, test_scaled_df
     
-def clean_zillow_taxes(df):
+def unique_cntvalues (df, max_unique):
     '''
-    this function takes in an unclean zillow df and does the following:
-    1.) keeps only columns we need for our model from the entire dataset, plus columns to calculate tax_rate
-    2.) drops nulls
-    3.) renames columns
+    takes in a df and a max_unique values to show using value_counts().
+    returns a report of number of unique values foe each columns and shouw unique values that < max_unique
     '''
-    #select features for df
-    features = ['parcelid', 'calculatedfinishedsquarefeet', 'bathroomcnt', 'bedroomcnt', 'taxvaluedollarcnt', 'yearbuilt','fips', 'taxamount']
-    df = df[features]
-    #fill in nulls of year_built with 2017
-    df['yearbuilt'].fillna(2017, inplace = True)
-    #calculate age by subtracting yearbuilt from 2017
-    df['age'] = 2017-df['yearbuilt']
-    #calculate tax_rate by having taxamount divided by taxvaluedollarcnt
-    df['tax_rate'] = df['taxamount'] / df['taxvaluedollarcnt']
-    
-    #drop duplicates in parcelid
-    df = df.drop_duplicates(subset=['parcelid'])
-    
-    #rename columns for easier use
-    df = df.rename(columns={
-                            'parcelid': 'parcel_id',
-                            'calculatedfinishedsquarefeet': 'sqft',
-                            'bathroomcnt': 'baths',
-                            'bedroomcnt': 'beds',
-                            'taxvaluedollarcnt':'tax_value',
-                            'taxamount': 'tax_amount'
-        
-    })
-    
-    #set index
-    df = df.set_index('parcel_id')
-    #drop nulls
-    df = df.dropna(subset=['sqft','tax_value', 'tax_amount'])
-    #drop year_built
-    df = df.drop(columns=['yearbuilt'])
-    
-    return df
+    #checking the uniques values for each column
+    columns = df.columns.tolist()
+    print( '************************** COUNT OF UNIQUE VALUES ************************** ')
+    print( 'Columns')
+    print(" ")
+    cat_list = []
+    for col in columns:
+        print(f'{col} --> {df[col].nunique()} unique values')
+        if df[col].nunique() < max_unique:
+            cat_list.append(col)
+        print(" ")
+    #checking  the variables that have few values
+    print(" **************************  UNIQUE VALUES **************************")
+    print(" ")
+    print(f"Uniques values of all the columns that have less than {max_unique} unique values ")
+    print(" ")
+    for l in cat_list:
+        print(l)
+        print(df[l].value_counts().sort_index())
+        print("--------------------------- ")
+        print(" ")
+
 
 def remove_outlier_tax(df):
     '''
@@ -246,3 +263,31 @@ def remove_outlier_tax(df):
     new_df = df[(np.abs(stats.zscore(df['tax_value'])) < 3)]
     new_df = df[(np.abs(stats.zscore(df['tax_amount'])) < 3)]
     return new_df
+
+# plot distributions
+def distribution (df):
+    '''
+    takes in a df and plot individual variable distributions excluding object type
+    '''
+    cols =df.columns.to_list()
+    for col in cols:
+        if df[col].dtype != 'object':
+            plt.hist(df[col])
+            plt.title(f'Distribution of {col}')
+            plt.xlabel('values')
+            plt.ylabel('Counts of customers')
+            plt.show()
+
+def distribution_boxplot (df):
+    '''
+    takes in a df and boxplot variable distributions excluding object type
+    '''
+    cols =df.columns.to_list()
+    for col in cols:
+        if df[col].dtype != 'object':
+            plt.figure(figsize=(8, 6))
+            sns.boxplot(x= col, data=df)
+            plt.title(f'Distribution of {col}')
+            plt.xlabel('values')
+            plt.show()
+    return
