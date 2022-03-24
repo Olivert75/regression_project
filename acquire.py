@@ -12,10 +12,21 @@ def new_zillow_data():
     '''
     Returns zillow into a dataframe
     '''
-    sql_query = '''select * from properties_2017
-    join predictions_2017 using(parcelid)
-    where transactiondate between "2017-05-01" and "2017-08-31"
-    and propertylandusetypeid in (260, 261, 262, 263, 264, 265, 266, 273, 275, 276, 279)'''
+    sql_query =''' 
+    SELECT  parcelid,
+            bedroomcnt, 
+            bathroomcnt, 
+            calculatedfinishedsquarefeet, 
+            taxvaluedollarcnt, 
+            yearbuilt, 
+            fips,
+            taxamount 
+    FROM properties_2017
+    JOIN propertylandusetype USING (propertylandusetypeid)
+    JOIN predictions_2017 as pred USING(parcelid)
+    WHERE propertylandusedesc IN ("Single Family Residential", "Inferred Single Family Residential")
+    AND transactiondate LIKE "2017%%";
+    '''
     df = pd.read_sql(sql_query, get_connection('zillow'))
     return df 
 
