@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import acquire 
-
+from env import user_name,password,host
 from sklearn.model_selection import train_test_split
 # turn off pink warning boxes
 import warnings
@@ -15,46 +15,66 @@ warnings.filterwarnings("ignore")
 # ***************************************************************************************************
 
 #acquire data for the first time
-def get_new_zillow():
+def get_connection(db):
     '''
-    This function reads in the zillow data from the Codeup db
-    and returns a pandas DataFrame with columns :
-     bedroomcnt, bathroomcnt, calculatedfinishedsquarefeet, taxvaluedollarcnt, yearbuilt, taxamount, fips 
+    Creates a connection URL
     '''
-    sql_query = '''
-    SELECT parcelid, bedroomcnt, bathroomcnt, calculatedfinishedsquarefeet,
-    taxvaluedollarcnt
-    FROM properties_2017
-    JOIN predictions_2017 as pred USING (parcelid)
-    WHERE pred.transactiondate >= '2017-05-01' AND pred.transactiondate <= '2017-08-31'
-    AND propertylandusetypeid > 259 AND propertylandusetypeid  < 266;
-    '''
-    return pd.read_sql(sql_query, get_connection('zillow'))
+    return f'mysql+pymysql://{user_name}:{password}@{host}/{db}'
 
-#acquire data main function 
-def get_zillow():
+def new_zillow_data():
     '''
-    This function reads in telco_churn data from Codeup database, writes data to
-    a csv file if a local file does not exist, and returns a df.
+    Returns zillow into a dataframe
     '''
+    sql_query =''' 
+    SELECT  parcelid,
+            bedroomcnt, 
+            bathroomcnt, 
+            calculatedfinishedsquarefeet, 
+            taxvaluedollarcnt, 
+            yearbuilt, 
+            fips,
+            taxamount 
+    FROM properties_2017
+    JOIN propertylandusetype USING (propertylandusetypeid)
+    JOIN predictions_2017 as pred USING(parcelid)
+    WHERE propertylandusedesc IN ("Single Family Residential", "Inferred Single Family Residential")
+    AND transactiondate LIKE "2017%%";
+    '''
+    df = pd.read_sql(sql_query, get_connection('zillow'))
+    return df 
+
+def get_zillow_data():
+    '''get connection, returns zillow into a dataframe and creates a csv for us'''
     if os.path.isfile('zillow.csv'):
-        
-        # If csv file exists, read in data from csv file.
         df = pd.read_csv('zillow.csv', index_col=0)
-        
     else:
-        
-        # Read fresh data from db into a DataFrame.
-        df = get_new_zillow()
-        
-        # Write DataFrame to a csv file.
+        df = new_zillow_data()
         df.to_csv('zillow.csv')
-        
     return df
 
+def clean_zillow (df):
+    '''
+    Takes in a df and drops duplicates, nulls,rename columns, parcelid is changed to string.
+    Return a clean df
+    '''
+    
+    # drop duplicates
+    df = df.drop_duplicates()
+    #drop nulls
+    df = df.dropna(how='any',axis=0)
+    #  change parcelid to string, it is a uniqure identifier for parcels lots
+    df['parcelid'] = df['parcelid'].astype('str')
+    df['fips'] = df['fips'].astype('int')
+    # rename columns
+    df = df.rename(columns={'parcelid':'parcel_id',
+                            'calculatedfinishedsquarefeet': 'sqft',
+                            'bathroomcnt': 'number_bathroom',
+                            'bedroomcnt': 'number_bedroom',
+                            'taxvaluedollarcnt':'tax_value',
+                            'taxamount': 'tax_amount',
+                            'fips':'geographic_code'})
 
-
-
+    return df
 
 def split_data(df):
     '''
@@ -95,8 +115,6 @@ def split_Xy (train, validate, test, target):
     print(f'X_test -> {X_test.shape}                  y_test>{y_test.shape}') 
     return  X_train, y_train, X_validate, y_validate, X_test, y_test
 
-
-
 def wrangle_zillow():
     ''''
     This function will acquire zillow db using get_new_zillow function. then it will use another
@@ -108,8 +126,6 @@ def wrangle_zillow():
     df = acquire.get_new_zillow()
     zillow_df = clean_zillow(df)
     return zillow_df
-
-
 
 
 def miss_dup_values(df):
