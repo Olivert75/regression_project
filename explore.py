@@ -18,7 +18,7 @@ def plot_pairplot(train, cols, hue=None):
     Take in train df, list of columns to plot, and hue=None
     and display scatter plots and hists.
     '''
-    sns.pairplot(train[cols], corner=True)
+    sns.pairplot(train[cols], corner=True, hue=hue)
     plt.show()
     
 
@@ -35,7 +35,31 @@ def correlation_exploration(train, x_string, y_string):
     print(f'The p-value is: {p}. There is {round(p,3)}% chance that we see these results by chance.')
     print(f'r = {round(r, 2)}')
     plt.show()
-    
+
+def distribution_plot(df,feature_lst):
+    '''
+    This function will take in a dataframe(train) and features to create a barplot for us to check distributions
+    of our selected features/univeriate exploration
+    '''
+    plt.figure(figsize=(13,25))
+    plt.subplot(5,1,1, xlabel = 'Property Square Footage', title='Distribution of Sq Ft')
+    plt.hist(data=df, x=feature_lst[0], bins = 30,ec='black')
+
+    plt.subplot(5,1,2, xlabel = 'No. of Bathrooms on Property',title='Distribution of No. of Bathrooms')
+    plt.hist(data=df, x=feature_lst[1], ec='black')
+
+    plt.subplot(5,1,3, xlabel = 'No. of Bedrooms on Property', title='Distribution of No. of Bedrooms')
+    plt.hist(data=df, x=feature_lst[2],ec='black')
+
+    plt.subplot(5,1,4, xlabel = 'Geographic Code',title='Distribution of FIPS')
+    plt.hist(data=df, x=feature_lst[3],ec='black')
+
+    plt.subplot(5,1,5, xlabel = 'Age of Property',title='Distribution of House Age')
+    plt.hist(data=df, x=feature_lst[4],ec='black')
+
+    plt.subplots_adjust(hspace=1)
+    plt.show()
+
 def get_zillow_heatmap(train):
     '''
     returns a heatmap and correlations of how each feature relates to tax_value
