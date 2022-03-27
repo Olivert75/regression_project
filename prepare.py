@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 
 def remove_outlier(df):
     '''
-    This function will remove values that are 3 standard deviations above or below the mean for sqft, baths, beds, and tax_value.         (Our MVP values)
+    This function will remove values that are 3 standard deviations above or below the mean for sqft, baths, beds, and tax_value.   (Our MVP values)
     '''
     new_df = df[(np.abs(stats.zscore(df['sqft'])) < 3)]
     new_df = df[(np.abs(stats.zscore(df['baths'])) < 3)]
@@ -86,44 +86,6 @@ def clean_zillow_data(df):
     
     return df
     
-def split_data(df):
-    '''
-    take in a DataFrame and return train, validate, and test DataFrames.
-    
-    '''
-    train_validate, test = train_test_split(df, test_size=.2, random_state=123)
-    train, validate = train_test_split(train_validate, 
-                                       test_size=.3, 
-                                       random_state=123)
-    print(f'train -> {train.shape}')
-    print(f'validate -> {validate.shape}')
-    print(f'test -> {test.shape}')                                  
-    return train, validate, test
-
-def split_Xy (train, validate, test, target):
-    '''
-    This function takes in three dataframe (train, validate, test) and a target  and splits each of the 3 samples
-    into a dataframe with independent variables and a series with the dependent, or target variable.
-    The function returns 3 dataframes and 3 series:
-    X_train (df) & y_train (series), X_validate & y_validate, X_test & y_test.
-    Example:
-    X_train, y_train, X_validate, y_validate, X_test, y_test = split_Xy (train, validate, test, 'Fertility' )
-    '''
-    
-    #split train
-    X_train = train.drop(columns= [target])
-    y_train= train[target]
-    #split validate
-    X_validate = validate.drop(columns= [target])
-    y_validate= validate[target]
-    #split validate
-    X_test = test.drop(columns= [target])
-    y_test= test[target]
-
-    print(f'X_train -> {X_train.shape}               y_train->{y_train.shape}')
-    print(f'X_validate -> {X_validate.shape}         y_validate->{y_validate.shape} ')        
-    print(f'X_test -> {X_test.shape}                  y_test>{y_test.shape}') 
-    return  X_train, y_train, X_validate, y_validate, X_test, y_test
 
 def train_validate_test(df, target):
     '''
@@ -162,65 +124,6 @@ def train_validate_test(df, target):
     return train, validate, test, X_train, y_train, X_validate, y_validate, X_test, y_test
 
 
-def get_object_cols(df):
-    '''
-    This function takes in a dataframe and identifies the columns that are object types
-    and returns a list of those column names. 
-    '''
-    # create a mask of columns whether they are object type or not
-    mask = np.array(df.dtypes == "object")
-
-        
-    # get a list of the column names that are objects (from the mask)
-    object_cols = df.iloc[:, mask].columns.tolist()
-    
-    return object_cols
-
-def get_numeric_X_cols(X_train, object_cols):
-    '''
-    takes in a dataframe and list of object column names
-    and returns a list of all other columns names, the non-objects. 
-    '''
-    numeric_cols = [col for col in X_train.columns.values if col not in object_cols]
-    
-    return numeric_cols
-
-def min_max_scale(X_train, X_validate, X_test, numeric_cols):
-    '''
-    this function takes in 3 dataframes with the same columns, 
-    a list of numeric column names (because the scaler can only work with numeric columns),
-    and fits a min-max scaler to the first dataframe and transforms all
-    3 dataframes using that scaler. 
-    it returns 3 dataframes with the same column names and scaled values. 
-    '''
-    # create the scaler object and fit it to X_train (i.e. identify min and max)
-    # if copy = false, inplace row normalization happens and avoids a copy (if the input is already a numpy array).
-
-
-    scaler = MinMaxScaler(copy=True).fit(X_train[numeric_cols])
-
-    #scale X_train, X_validate, X_test using the mins and maxes stored in the scaler derived from X_train. 
-    # 
-    X_train_scaled_array = scaler.transform(X_train[numeric_cols])
-    X_validate_scaled_array = scaler.transform(X_validate[numeric_cols])
-    X_test_scaled_array = scaler.transform(X_test[numeric_cols])
-
-    # convert arrays to dataframes
-    X_train_scaled = pd.DataFrame(X_train_scaled_array, 
-                                  columns=numeric_cols).\
-                                  set_index([X_train.index.values])
-
-    X_validate_scaled = pd.DataFrame(X_validate_scaled_array, 
-                                     columns=numeric_cols).\
-                                     set_index([X_validate.index.values])
-
-    X_test_scaled = pd.DataFrame(X_test_scaled_array, 
-                                 columns=numeric_cols).\
-                                 set_index([X_test.index.values])
-
-    
-    return X_train_scaled, X_validate_scaled, X_test_scaled
-
 def scaled_df ( train_df , validate_df, test_df, scaler):
     '''
     Take in a 3 df and a type of scaler that you  want to  use. it will scale all columns
@@ -229,7 +132,7 @@ def scaled_df ( train_df , validate_df, test_df, scaler):
     scaler : MinMaxScaler() or RobustScaler(), StandardScaler() 
     Example:
     scaled_df( X_train , X_validate , X_test, RobustScaler())
-    
+    This function is more flexible compare function above 
     '''
     #get all columns except object type
     columns = train_df.select_dtypes(exclude='object').columns.tolist()
@@ -247,6 +150,7 @@ def scaled_df ( train_df , validate_df, test_df, scaler):
     test_scaled_df = pd.DataFrame(test_scaled, columns=columns).set_index([test_df.index.values])
 
     #plot
+    '''
     for col in columns: 
         plt.figure(figsize=(13, 6))
         plt.subplot(121)
@@ -259,7 +163,7 @@ def scaled_df ( train_df , validate_df, test_df, scaler):
         plt.title('Scaled')
         plt.xlabel(col)
         plt.ylabel("counts")
-
+    '''
     return train_scaled_df, validate_scaled_df, test_scaled_df
     
 def unique_cntvalues (df, max_unique):
