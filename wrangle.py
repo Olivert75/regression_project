@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import acquire 
+from scipy import stats
 from env import user_name,password,host
 from sklearn.model_selection import train_test_split
 # turn off pink warning boxes
@@ -52,6 +53,18 @@ def get_zillow_data():
         df.to_csv('zillow.csv')
     return df
 
+#Prepare
+
+def remove_outlier(df):
+    '''
+    This function will remove values that are 3 standard deviations above or below the mean for sqft, baths, beds, and tax_value.   (Our MVP values)
+    '''
+    new_df = df[(np.abs(stats.zscore(df['sqft'])) < 3)]
+    new_df = df[(np.abs(stats.zscore(df['number_bathroom'])) < 3)]
+    new_df = df[(np.abs(stats.zscore(df['number_bedroom'])) < 3)]
+    new_df = df[(np.abs(stats.zscore(df['tax_value'])) < 3)]
+    return new_df
+
 def clean_zillow (df):
     '''
     Takes in a df and drops duplicates, nulls,rename columns, parcelid is changed to string.
@@ -65,6 +78,10 @@ def clean_zillow (df):
     #  change parcelid to string, it is a uniqure identifier for parcels lots
     df['parcelid'] = df['parcelid'].astype('str')
     df['fips'] = df['fips'].astype('int')
+    #create a new column named 'age', which is 2017 minus the yearbuilt
+    df['age'] = 2017-df['yearbuilt']
+    #calculate tax_rate by having taxamount divided by taxvaluedollarcnt
+    df['tax_rate'] = df['taxamount'] / df['taxvaluedollarcnt']
     # rename columns
     df = df.rename(columns={'parcelid':'parcel_id',
                             'calculatedfinishedsquarefeet': 'sqft',
@@ -73,47 +90,73 @@ def clean_zillow (df):
                             'taxvaluedollarcnt':'tax_value',
                             'taxamount': 'tax_amount',
                             'fips':'geographic_code'})
+    #drop year_built, we can just use age.
+    df = df.drop(columns=['yearbuilt'])
 
     return df
 
-def split_data(df):
+def split_data(df, target):
     '''
-    take in a DataFrame and return train, validate, and test DataFrames.
-    
+    this function combine from 2 functions above, 
+    a test, which is 20% of the entire dataframe, 
+    a validate, which is 24% of the entire dataframe,
+    and a train, which is 56% of the entire dataframe. 
+    It then splits each of the 3 samples into a dataframe with independent variables
+    and a series with the dependent, or target variable. Then print the shape of 3 dataframes (Train, Validate and Test)
+    The function returns train, validate, test sets and also another 3 dataframes and 3 series:
+    X_train (df) & y_train (series), X_validate & y_validate, X_test & y_test. 
     '''
+    # split df into test (20%) and train_validate (80%)
     train_validate, test = train_test_split(df, test_size=.2, random_state=123)
-    train, validate = train_test_split(train_validate, 
-                                       test_size=.3, 
-                                       random_state=123)
-    print(f'train -> {train.shape}')
-    print(f'validate -> {validate.shape}')
-    print(f'test -> {test.shape}')                                  
-    return train, validate, test
 
-def split_Xy (train, validate, test, target):
-    '''
-    This function takes in three dataframe (train, validate, test) and a target  and splits each of the 3 samples
-    into a dataframe with independent variables and a series with the dependent, or target variable.
-    The function returns 3 dataframes and 3 series:
-    X_train (df) & y_train (series), X_validate & y_validate, X_test & y_test.
-    Example:
-    X_train, y_train, X_validate, y_validate, X_test, y_test = split_Xy (train, validate, test, 'Fertility' )
-    '''
+    # split train_validate off into train (70% of 80% = 56%) and validate (30% of 80% = 24%)
+    train, validate = train_test_split(train_validate, test_size=.3, random_state=123)
+
+        
+    # split train into X (dataframe, drop target) & y (series, keep target only)
+    X_train = train.drop(columns=[target])
+    y_train = train[target]
     
-    #split train
-    X_train = train.drop(columns= [target])
-    y_train= train[target]
-    #split validate
-    X_validate = validate.drop(columns= [target])
-    y_validate= validate[target]
-    #split validate
-    X_test = test.drop(columns= [target])
-    y_test= test[target]
-
+    # split validate into X (dataframe, drop target) & y (series, keep target only)
+    X_validate = validate.drop(columns=[target])
+    y_validate = validate[target]
+    
+    # split test into X (dataframe, drop target) & y (series, keep target only)
+    X_test = test.drop(columns=[target])
+    y_test = test[target]
+    
     print(f'X_train -> {X_train.shape}               y_train->{y_train.shape}')
     print(f'X_validate -> {X_validate.shape}         y_validate->{y_validate.shape} ')        
     print(f'X_test -> {X_test.shape}                  y_test>{y_test.shape}') 
-    return  X_train, y_train, X_validate, y_validate, X_test, y_test
+
+    return train, validate, test, X_train, y_train, X_validate, y_validate, X_test, y_test
+
+def scaled_df ( train_df , validate_df, test_df, scaler):
+    '''
+    Take in a 3 df and a type of scaler that you  want to  use. it will scale all columns
+    except object type. Fit a scaler only in train and tramnsform in train, validate and test.
+    returns  new dfs with the scaled columns.
+    scaler : MinMaxScaler() or RobustScaler(), StandardScaler() 
+    Example:
+    scaled_df( X_train , X_validate , X_test, RobustScaler())
+    This function is more flexible compare function above 
+    '''
+    #get all columns except object type
+    columns = train_df.select_dtypes(exclude='object').columns.tolist()
+    
+    # fit our scaler
+    scaler.fit(train_df[columns])
+    # get our scaled arrays
+    train_scaled = scaler.transform(train_df[columns])
+    validate_scaled= scaler.transform(validate_df[columns])
+    test_scaled= scaler.transform(test_df[columns])
+
+    # convert arrays to dataframes
+    train_scaled_df = pd.DataFrame(train_scaled, columns=columns).set_index([train_df.index.values])
+    validate_scaled_df = pd.DataFrame(validate_scaled, columns=columns).set_index([validate_df.index.values])
+    test_scaled_df = pd.DataFrame(test_scaled, columns=columns).set_index([test_df.index.values])
+
+    return train_scaled_df, validate_scaled_df, test_scaled_df
 
 def wrangle_zillow():
     ''''
