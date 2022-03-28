@@ -33,8 +33,7 @@ def new_zillow_data():
             calculatedfinishedsquarefeet, 
             taxvaluedollarcnt, 
             yearbuilt, 
-            fips,
-            taxamount 
+            fips 
     FROM properties_2017
     JOIN propertylandusetype USING (propertylandusetypeid)
     JOIN predictions_2017 as pred USING(parcelid)
@@ -80,15 +79,12 @@ def clean_zillow (df):
     df['fips'] = df['fips'].astype('int')
     #create a new column named 'age', which is 2017 minus the yearbuilt
     df['age'] = 2017-df['yearbuilt']
-    #calculate tax_rate by having taxamount divided by taxvaluedollarcnt
-    df['tax_rate'] = df['taxamount'] / df['taxvaluedollarcnt']
     # rename columns
     df = df.rename(columns={'parcelid':'parcel_id',
                             'calculatedfinishedsquarefeet': 'sqft',
                             'bathroomcnt': 'number_bathroom',
                             'bedroomcnt': 'number_bedroom',
                             'taxvaluedollarcnt':'tax_value',
-                            'taxamount': 'tax_amount',
                             'fips':'geographic_code'})
     #drop year_built, we can just use age.
     df = df.drop(columns=['yearbuilt'])
