@@ -1,19 +1,12 @@
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from pydataset import data
-import evaluate as eval
-import wrangle
-import prepare
-import math
 
+#Sklearn
 from sklearn.feature_selection import SelectKBest, f_regression
 from sklearn.linear_model import LinearRegression, LassoLars, TweedieRegressor 
 from sklearn.feature_selection import RFE
 from sklearn.preprocessing import MinMaxScaler
-
-
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import PolynomialFeatures
 
 
@@ -52,39 +45,107 @@ def select_rfe (X_df, y_df, n_features, method):
     '''
     lm = method
     rfe = RFE(estimator=lm, n_features_to_select= n_features)
-    rfe.fit(X_df, y_df)
+    rfe.fit_transform(X_df, y_df)
     top_rfe = list(X_df.columns[rfe.support_])
     print(f'The top {n_features} selected feautures based on the the RFE class class are: {top_rfe}' )
     print(pd.Series(dict(zip(X_df.columns, rfe.ranking_))).sort_values())
     return top_rfe
 
-def create_model (X_df_scaled, y_df, actual, method, name):
+
+def create_baseline(y_train, y_validate, target):
     '''
-    takes in features scaled df, target df, name of actual target, 
-    type of method and the name of the selected method and 
-    returns a dictionary that contains calculated regression errors.
-    
-    X_df_scaled : df that contains scaled featues
-    y_df: target df
-    actual: name of the column where is actual value of the target
-    mehod: type of method to create the model object
-    name: enter the new name for your model
-    
-    Example:
-    create_model(X_train_scaled[top_sb], y_train, 'actual', LinearRegression(normalize=True), 'modelOLS' )
+    Take in a y_train and y_validate dataframe and target variable(tax_value). 
+    Calculate the mean and median of the target variable and print the result side by side comparsion
+    Select the one has lowest RMSE
+    And then append into a dataframe called metric_df
     '''
-    # fit the thing
-    method.fit(X_df_scaled, y_df[actual])
+    #tax_value mean
+    tax_value_pred_mean = y_train[target].mean()
+    y_train['tax_value_pred_mean'] = tax_value_pred_mean
+    y_validate['tax_value_pred_mean'] = tax_value_pred_mean
 
-    # predict train
-    y_df[name] = method.predict(X_df_scaled)
+    #tax_value_median
+    tax_value_pred_median = y_train[target].median()
+    y_train['tax_value_pred_median'] = tax_value_pred_median
+    y_validate['tax_value_pred_median'] = tax_value_pred_median
 
-    #calculate regression errors using a created function
-    train_eval = eval.regression_errors(y_df, actual, name)
+    #RMSE of tax_value_pred_mean
+    rmse_mean_train = mean_squared_error(y_train.tax_value, y_train.tax_value_pred_mean)**(1/2)
+    rmse_mean_validate = mean_squared_error(y_validate.tax_value, y_validate.tax_value_pred_mean)**(1/2)
 
-    return train_eval
+    #RMSE of tax_value_pred_median
+    rmse_median_train = mean_squared_error(y_train.tax_value, y_train.tax_value_pred_median)**(1/2)
+    rmse_median_validate = mean_squared_error(y_validate.tax_value, y_validate.tax_value_pred_median)**(1/2)
+    
+    #R2 score for the baseline
+    r2_baseline = r2_score(y_validate.tax_value, y_validate.tax_value_pred_mean)
 
+    #Append rmse validate and r2 score into a dataframe
+    metric_df = pd.DataFrame(data=[{
+    'model': 'Mean Baseline',
+    'rmse_train': rmse_mean_train,
+    'rmse_validate': rmse_mean_validate,
+    'r^2_value': r2_baseline}])
 
+    return  metric_df, rmse_mean_train, rmse_mean_validate, rmse_median_train, rmse_median_validate, r2_baseline
+
+def create_model(model, X_train_scaled, X_validate_scaled, y_train, y_validate):
+    '''
+    take in features scaled df (number_bedroom, number_bathroom, age, fips) and target df (tax_value), and
+    type of model (LinearRegression, LassoLars, TweedieRegressor, PolynomialFeatures) and hyper parameter and
+    calculate the mean square error and r2 score
+    and return mean square error and r2 score
+    '''
+    #fit the model to our training data, specify column since it is a dataframe
+    model.fit(X_train_scaled,y_train.tax_value)
+
+    #predict train
+    y_train['tax_value_pred_lm'] = model.predict(X_train_scaled)
+    y_train['tax_value_pred_lars'] = model.predict(X_train_scaled)
+    y_train['tax_value_pred_glm'] = model.predict(X_train_scaled)
+    y_train['tax_value_pred_lm3'] = model.predict(X_train_scaled)
+
+    #evaluate the RMSE for train
+    rmse_train = mean_squared_error(y_train.tax_value, y_train.tax_value_pred_lm)**(1/2)
+    rmse_train = mean_squared_error(y_train.tax_value, y_train.tax_value_pred_lars)**(1/2)
+    rmse_train = mean_squared_error(y_train.tax_value, y_train.tax_value_pred_glm)**(1/2)
+    rmse_train = mean_squared_error(y_train.tax_value, y_train.tax_value_pred_lm3)**(1/2)
+
+    #predict validate
+    y_validate['tax_value_pred_lm'] = model.predict(X_validate_scaled)
+    y_validate['tax_value_pred_lars'] = model.predict(X_validate_scaled)
+    y_validate['tax_value_pred_glm'] = model.predict(X_validate_scaled)
+    y_validate['tax_value_pred_lm3'] = model.predict(X_validate_scaled)
+   
+    #evaluate the RMSE for validate
+    rmse_validate = mean_squared_error(y_validate.tax_value, y_validate.tax_value_pred_lm)**(1/2)
+    rmse_validate = mean_squared_error(y_validate.tax_value, y_validate.tax_value_pred_lars)**(1/2)
+    rmse_validate = mean_squared_error(y_validate.tax_value, y_validate.tax_value_pred_glm)**(1/2)
+    rmse_validate = mean_squared_error(y_validate.tax_value, y_validate.tax_value_pred_lm3)**(1/2)
+
+    #r2 score for model
+    r2_model_score = r2_score(y_validate.tax_value, y_validate.tax_value_pred_lm)
+    r2_model_score = r2_score(y_validate.tax_value, y_validate.tax_value_pred_lars)
+    r2_model_score = r2_score(y_validate.tax_value, y_validate.tax_value_pred_glm)
+    r2_model_score = r2_score(y_validate.tax_value, y_validate.tax_value_pred_lm3)
+
+    return rmse_train, rmse_validate, r2_model_score
+
+def best_model(X_test_scaled, y_test):
+    '''
+    This function is similar to create_model function but only using the test dataset
+    '''
+    #let's do linear regression again with our new degree
+    lm3 = LinearRegression(normalize=True)
+    #fit the model using scaled X_train, once again specify y_train column
+    lm3.fit(X_test_scaled, y_test.tax_value)
+    # predicting on our test model
+    y_test['tax_value_pred_lm3'] = lm3.predict(X_test_scaled)
+    # evaluate: rmse
+    rmse_test = mean_squared_error(y_test.tax_value, y_test.tax_value_pred_lm3)**(1/2)
+    #R2 score
+    r2_model_score = r2_score(y_test.tax_value, y_test.tax_value_pred_lm3)
+    return rmse_test, r2_model_score
 
 def report(metric_df):
     
@@ -102,7 +163,7 @@ def report(metric_df):
     print(f'   ********** The model with the less  rmse_validate  is {metric_df.iloc[min_val][0] }  rmse:{rsme_bet} **********             ')
     print('-----------------------------------------------------------------------------------------------')
     print(' ')
-    min_val = metric_df['r^2_validate'].idxmax()
+    min_val = metric_df['r^2_value'].idxmax()
     metric_df.iloc[min_val][0]
     print(f'The model with r^2 validate closer to 1 is ', metric_df.iloc[min_val][0])
     
