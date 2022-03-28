@@ -37,7 +37,7 @@ def new_zillow_data():
     FROM properties_2017
     JOIN propertylandusetype USING (propertylandusetypeid)
     JOIN predictions_2017 as pred USING(parcelid)
-    WHERE propertylandusedesc IN ("Single Family Residential", "Inferred Single Family Residential")
+    WHERE propertylandusedesc IN ("Single Family Residential")
     AND transactiondate LIKE "2017%%";
     '''
     df = pd.read_sql(sql_query, get_connection('zillow'))
@@ -79,6 +79,8 @@ def clean_zillow (df):
     df['fips'] = df['fips'].astype('int')
     #create a new column named 'age', which is 2017 minus the yearbuilt
     df['age'] = 2017-df['yearbuilt']
+    #create a new column named 'county', map it with the code in fips
+    df['county'] = df['fips'].map({6037: 'Los Angeles', 6059: 'Orange', 6111: 'Ventura'})
     # rename columns
     df = df.rename(columns={'parcelid':'parcel_id',
                             'calculatedfinishedsquarefeet': 'sqft',
