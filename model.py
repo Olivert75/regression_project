@@ -148,6 +148,10 @@ def best_model(X_test_scaled, y_test):
     return rmse_test, r2_model_score
 
 def report(metric_df):
+    '''
+    This funtion will take in a dataframe and convert to a html and passed to the display function, 
+    it will result in dataframe being displayed in the frontend (only works in the notebook).
+    '''
     
     from IPython.display import display, HTML
     rmse_base = metric_df.iloc[0,2]
