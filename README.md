@@ -30,7 +30,7 @@
 
  ## 1.) Project Overview
  In this project, I will be working with a Zillow dataset to create a model that will predict a property's value. Specifically for this scenario...
- This machine learning model will predict single-unit property values that are sold during the peak season of real-estate (May-Aug) of 2017. 
+ This machine learning model will predict single-unit property values that are sold during 2017. 
  <br>
  <br>
 
@@ -96,7 +96,7 @@ Hypotheses: Square footage, number of bedrooms, number of bathrooms have a posit
 
 ## 8b.) Acquire :bulb:
 Goal: Have Zillow dataframe ready to prepare in acquire.py
-In this stage, I used a connection URL to access the CodeUp database. Using a SQL query, I brought in the Zillow dataset with only properties set for single use, and were sold in between May-August 2017. I turned it into a pandas dataframe and created a .csv in order to use it for the rest of the pipeline. 
+In this stage, I used a connection URL to access the CodeUp database. Using a SQL query, I brought in the Zillow dataset with only properties set for single use, and were sold in 2017. I turned it into a pandas dataframe and created a .csv in order to use it for the rest of the pipeline. 
 | acquire.py Functions | Purpose                                                        |
 |----------------------|----------------------------------------------------------------|
 | get_connection()     | Creates a connection link so we can access our data            |
@@ -163,16 +163,16 @@ The models worked best with sqft, baths, beds, and age. Polynomial Regression pe
 
 | Model                            | RMSE Training | RMSE Validate | R^2   |
 |----------------------------------|---------------|---------------|-------|
-| Baseline                         | 357,185.61    | 359,454.06    | -3.07 |
-| LinearRegression                 | 280,731.20    | 279,672.68    | 0.395 |
-| LassoLars                        | 280,731.60    | 279,675.52    | 0.395 |
-| TweedieRegressor                 | 280,731.20    | 279,672.68    | 0.395 |
-| PolynomialRegression (3 degrees) | 276,310.65    | 274,076.31    | 0.42  |
+| Baseline                         | 413268.163083 | 413818.472866 | -0.000122|
+| LinearRegression                 | 324177.799545 | 279,672.68    | 0.396955 |
+| LassoLars                        | 324178.208202 | 279,675.52    | 0.396904 |
+| TweedieRegressor                 | 324177.799545 | 279,672.68    | 0.396955 |
+| PolynomialRegression (3 degrees) | 318899.434281 | 274,076.31    | 0.414723 |
 <br>
 
 Test:
- - RMSE of 272,168.27
- - R^2 of 0.403
+ - RMSE of 323,772.490847
+ - R^2 of 0.4006944135449
 
 Beats the baseline! 
 <br>
@@ -187,7 +187,7 @@ I will be giving a presentation over my findings!
 ## 9.) Conclusion
 
 To conclude...
-We took a very large Zillow dataset and condensed it down to 37,927 rows to work with. We dropped rows with outliers of 3 standard deviations above or below the mean for that column. 
+We took a very large Zillow dataset and condensed it down to 52,200 rows to work with. We dropped rows with outliers of 3 standard deviations above or below the mean for that column. 
 
  -  Square footage was the best feature to determine a property's value. As square footage increased, it seemed that value also went up.
 
