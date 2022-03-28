@@ -206,7 +206,7 @@ We took a very large Zillow dataset and condensed it down to 52,200 rows to work
 
 | Column Name                  | Renamed          | Info                                            | Data type      |
 |------------------------------|------------------|-------------------------------------------------|----------------|
-| parcelid                     | N/A              | ID of the property (unique)                     | Index          |
+| parcelid                     | N/A              | ID of the property (unique)                     | Object          |
 | bathroomcnt                  | number_bathroom  | number of bathrooms                             | Float          |
 | bedroomcnt                   | number_bedroom   | number of bedrooms                              | Float          |
 | calculatedfinishedsquarefeet | sqft             | number of square feet                           | Float          |  
@@ -214,7 +214,7 @@ We took a very large Zillow dataset and condensed it down to 52,200 rows to work
 | yearbuilt                    | N/A              | The year the property was built                 | Float          |   
 | taxvaluedollarcnt            | tax_value        | Property's tax value in dollars                 | Float          |
 | age                          | N/A              | 2017-yearbuilt (to see the age of the property) | Float          | 
-| county                       | N/A              | 6037-Los Angeles, 6059-Orange, 6111-Ventura     |
+| county                       | N/A              | 6037-Los Angeles, 6059-Orange, 6111-Ventura     | Object
  
 
 <br>
