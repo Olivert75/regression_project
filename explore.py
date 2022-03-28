@@ -39,19 +39,19 @@ def distribution_plot(df,feature_lst):
     of our selected features/univeriate exploration
     '''
     plt.figure(figsize=(13,25))
-    plt.subplot(5,1,1, xlabel = 'Property Square Footage', title='Distribution of Sq Ft')
+    plt.subplot(5,1,1, xlabel = 'Property Square Footage', ylabel= 'No. Properties', title='Distribution of Sq Ft')
     plt.hist(data=df, x=feature_lst[0], bins = 30,ec='black')
 
-    plt.subplot(5,1,2, xlabel = 'No. of Bathrooms on Property',title='Distribution of No. of Bathrooms')
+    plt.subplot(5,1,2, xlabel = 'No. of Bathrooms on Property', ylabel= 'No. Properties', title='Distribution of No. of Bathrooms')
     plt.hist(data=df, x=feature_lst[1], ec='black')
 
-    plt.subplot(5,1,3, xlabel = 'No. of Bedrooms on Property', title='Distribution of No. of Bedrooms')
+    plt.subplot(5,1,3, xlabel = 'No. of Bedrooms on Property', ylabel= 'No. Properties', title='Distribution of No. of Bedrooms')
     plt.hist(data=df, x=feature_lst[2],ec='black')
 
-    plt.subplot(5,1,4, xlabel = 'Geographic Code',title='Distribution of FIPS')
+    plt.subplot(5,1,4, xlabel = 'County', ylabel= 'No. Properties', title='Distribution of FIPS')
     plt.hist(data=df, x=feature_lst[3],ec='black')
 
-    plt.subplot(5,1,5, xlabel = 'Age of Property',title='Distribution of House Age')
+    plt.subplot(5,1,5, xlabel = 'Age of Property', ylabel= 'No. Properties', title='Distribution of House Age')
     plt.hist(data=df, x=feature_lst[4],ec='black')
 
     plt.subplots_adjust(hspace=1)
@@ -97,3 +97,21 @@ def distribution_single_var (df, columns):
             plt.show()
 
     return
+
+def plot_residuals(y_validate):
+    '''
+    take in a df, display a scatter plot. 
+    The closer a dot is to the line means that the closer the prediction was to the actual value
+    '''
+    # plot the residuals for the best performing model
+    plt.figure(figsize=(16,8))
+    plt.axhline(label="No Error")
+
+    plt.scatter(y_validate.tax_value, y_validate.tax_value_pred_lm3 - y_validate.tax_value, 
+            alpha=.5, color="red", s=100, label="Model 3rd degree Polynomial")
+    plt.legend()
+    plt.xlabel("Actual tax Value")
+    plt.ylabel("Residual/Error: Predicted Tax value - Actual")
+    plt.title("Residuals")
+
+    plt.show()
