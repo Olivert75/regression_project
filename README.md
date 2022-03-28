@@ -204,21 +204,18 @@ We took a very large Zillow dataset and condensed it down to 52,200 rows to work
 
 ## 10.) Data Dictionary 
 
-| Column Name                  | Renamed   | Info                                            |
-|------------------------------|-----------|-------------------------------------------------|
-| parcelid                     | N/A       | ID of the property (unique)                     |
-| bathroomcnt                  | baths     | number of bathrooms                             |
-| bedroomcnt                   | beds      | number of bedrooms                              |
-| calculatedfinishedsquarefeet | sqft      | number of square feet                           |
-| fips                         | N/A       | FIPS code (for county)                          |
-| propertylandusetypeid        | N/A       | Type of property                                |
-| yearbuilt                    | N/A       | The year the property was built                 |
-| taxvaluedollarcnt            | tax_value | Property's tax value in dollars                 |
-| transactiondate              | N/A       | Day the property was purchased                  |
-| age                          | N/A       | 2017-yearbuilt (to see the age of the property) |
-| taxamount                    | tax_amount| amount of tax on property                       |
-| tax_rate                     | N/A       | tax_rate on property                            |
-
+| Column Name                  | Renamed          | Info                                            | Data type      |
+|------------------------------|------------------|-------------------------------------------------|----------------|
+| parcelid                     | N/A              | ID of the property (unique)                     | Index          |
+| bathroomcnt                  | number_bathroom  | number of bathrooms                             | Float          |
+| bedroomcnt                   | number_bedroom   | number of bedrooms                              | Float          |
+| calculatedfinishedsquarefeet | sqft             | number of square feet                           | Float          |  
+| fips                         | geographic_code  | FIPS code (for county)                          | Int            |
+| yearbuilt                    | N/A              | The year the property was built                 | Float          |   
+| taxvaluedollarcnt            | tax_value        | Property's tax value in dollars                 | Float          |
+| age                          | N/A              | 2017-yearbuilt (to see the age of the property) | Float          | 
+| county                       | N/A              | 6037-Los Angeles, 6059-Orange, 6111-Ventura     |
+ 
 
 <br>
 <br>
