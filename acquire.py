@@ -24,7 +24,7 @@ def new_zillow_data():
     FROM properties_2017
     JOIN propertylandusetype USING (propertylandusetypeid)
     JOIN predictions_2017 as pred USING(parcelid)
-    WHERE propertylandusedesc IN ("Single Family Residential", "Inferred Single Family Residential")
+    WHERE propertylandusedesc IN ("Single Family Residential")
     AND transactiondate LIKE "2017%%";
     '''
     df = pd.read_sql(sql_query, get_connection('zillow'))
