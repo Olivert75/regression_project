@@ -55,15 +55,35 @@ def get_zillow_data():
 #Prepare
 
 def remove_outlier(df):
-    '''
-    This function will remove values that are 3 standard deviations above or below the mean for sqft, baths, beds, and tax_value.   (Our MVP values)
-    '''
+
+    #This function will remove values that are 3 standard deviations above or below the mean for sqft, baths, beds, and tax_value.   (Our MVP values)
+
     new_df = df[(np.abs(stats.zscore(df['sqft'])) < 3)]
     new_df = df[(np.abs(stats.zscore(df['number_bathroom'])) < 3)]
     new_df = df[(np.abs(stats.zscore(df['number_bedroom'])) < 3)]
     new_df = df[(np.abs(stats.zscore(df['tax_value'])) < 3)]
     return new_df
+'''
+def remove_outliers(train, validate, test, k, col_list):
 
+    This function takes in a dataset split into three sample dataframes: train, validate and test.
+    It calculates an outlier range based on a given value for k, using the interquartile range 
+    from the train sample. It then applies that outlier range to each of the three samples, removing
+    outliers from a given list of feature columns. The train, validate, and test dataframes 
+    are returned, in that order. 
+
+    for col in col_list:
+        q1, q3 = train[col].quantile([.25, .75])  # get quartiles
+        iqr = q3 - q1   # calculate interquartile range
+        upper_bound = q3 + k * iqr   # get upper bound
+        lower_bound = q1 - k * iqr   # get lower bound
+        # remove outliers from each of the three samples
+        train = train[(train[col] > lower_bound) & (train[col] < upper_bound)]
+        validate = validate[(validate[col] > lower_bound) & (validate[col] < upper_bound)]
+        test = test[(test[col] > lower_bound) & (test[col] < upper_bound)]
+    #return sample dataframes without outliers
+    return train, validate, test
+'''
 def clean_zillow (df):
     '''
     Takes in a df and drops duplicates, nulls,rename columns, parcelid is changed to string.
