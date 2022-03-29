@@ -35,7 +35,7 @@
  <br>
 
 ## 2.) Project Description
-  We are to build a regression model to predict a continuous variable (tax_value) using features that will help us better predict tax value. Since there are heaps of missing data, we'll have to find ways to combat it. We also want to know which counties these properties are located in and calculate tax rate. 
+  We are to build a regression model to predict a continuous variable (tax_value) using features that will help us better predict property value. Since there are heaps of missing data, we'll have to find ways to handle it. We also want to know which counties these properties are located in and calculate tax rate. 
     
  ## 3.) Goals
   - Deliver a Jupyter notebook going through the steps of the data science pipeline
@@ -47,7 +47,6 @@
 ## 4.) Deliverables
  - Finalized Jupyter notebook complete with comments
  - A README.md with executive summary, contents, data dictionary, conclusion and next steps, and how to recreate this project.
- - Presentation slide deck
  <br>
  <br>
 
@@ -58,13 +57,11 @@
 
 1.) The larger the square footage, the higher the property value
 
-2.) The more bedrooms a house has, the higher its property value will be
+2.) The more bedrooms or bathrooms a house has, the higher its property value will be
 
-3.) The more bathrooms a house has, the higher its property value will be
+3.) The older a house is, the less it will be worth.
 
-4.) The older a house is, the less it will be worth.
-
-5.) Value is dependent on property location
+4.) Value is dependent on property location
 
 ## 7.)  Findings and Next Steps
    - Square footage was the best feature for predicting home value, followed up by bathrooms and bedrooms.
@@ -81,7 +78,7 @@ Next steps would be:
 
 # 8.) The Pipeline: 
 
-## 8a.) Planning :stopwatch:
+## 8a.) Planning 
 Goal: Plan out the project
 I will be seeing how square footage, bathroom count, and bedroom count relate to property value. I believe there will be a 
 positive correlation among these variables. 
@@ -94,7 +91,7 @@ Hypotheses: Square footage, number of bedrooms, number of bathrooms have a posit
 
 <br>
 
-## 8b.) Acquire :bulb:
+## 8b.) Acquire 
 Goal: Have Zillow dataframe ready to prepare in acquire.py
 In this stage, I used a connection URL to access the CodeUp database. Using a SQL query, I brought in the Zillow dataset with only properties set for single use, and were sold in 2017. I turned it into a pandas dataframe and created a .csv in order to use it for the rest of the pipeline. 
 | acquire.py Functions | Purpose                                                        |
@@ -109,7 +106,7 @@ For the next stage: Drop or fill in nulls, remove outliers, rename columns, make
 
 <br>
 
-## 8c.) Prep :soap:
+## 8c.) Prep 
 Goal: Have Zillow dataset that is split into train, validate, test, and ready to be analyzed. Assure data types are appropriate and that missing values/duplicates/outliers are addressed. Put this in a prep.py. 
 In this stage, I handled outliers by dropping any rows with values that were 3 standard deviations above or below the mean.
 I assured that all columns had a numeric data type, and renamed them for ease of use.
@@ -126,15 +123,13 @@ Last, I scaled it on a min-max scaler (I made sure to drop outliers first!) and 
 | get_object_cols(df)                                      | returns columns with object data types                            |
 | get_numeric_X_cols(df, object_cols)                      | returns columns with numeric data types                           |
 | min_max_scale(X_train, X_validate, X_test, numeric_cols) | uses MinMax scaler on X sets                                      |
-| clean_zillow_taxes(df) *for tax_rates                    | cleans Zillow data for use in calculating tax_rates of properties |
-| remove_outlier_tax(df) *for tax rates                    | removes outliers for use in calculating tax_rates of properties   |
 <br>
 
 For the next step: run statistical testing and visualize data to find relationships between variables.
 <br>
 
 
-## 8d.) Explore :mag:
+## 8d.) Explore 
 Goal: Visualize the data. Explore relationships.  Find answers. Use the visuals and statistics tests to help answer your questions. 
 I plotted distributions, made sure nothing was out of the ordinary after cleaning the dataset. 
 
@@ -156,7 +151,7 @@ I found that square footage, bedroom count, and bathroom count were all statisti
 For the next step: Select features to use to build a regression model that predicts property value
 <br>
 
-## 8e.) Modeling and Evaluation :chart_with_upwards_trend:
+## 8e.) Modeling and Evaluation 
 Goal: develop a regression model that performs better than the baseline.
 
 The models worked best with sqft, baths, beds, and age. Polynomial Regression performed the best, so I did a test on it.
@@ -164,10 +159,10 @@ The models worked best with sqft, baths, beds, and age. Polynomial Regression pe
 | Model                            | RMSE Training | RMSE Validate | R^2   |
 |----------------------------------|---------------|---------------|-------|
 | Baseline                         | 413268.163083 | 413818.472866 | -0.000122|
-| LinearRegression                 | 324177.799545 | 279,672.68    | 0.396955 |
-| LassoLars                        | 324178.208202 | 279,675.52    | 0.396904 |
-| TweedieRegressor                 | 324177.799545 | 279,672.68    | 0.396955 |
-| PolynomialRegression (3 degrees) | 318899.434281 | 274,076.31    | 0.414723 |
+| LinearRegression                 | 324177.799545 | 321334.985074 | 0.396955 |
+| LassoLars                        | 324178.208202 | 321348.607211 | 0.396904 |
+| TweedieRegressor                 | 324177.799545 | 321334.985069 | 0.396955 |
+| PolynomialRegression (3 degrees) | 318899.434281 | 316565.929491 | 0.414723 |
 <br>
 
 Test:
@@ -178,9 +173,7 @@ Beats the baseline!
 <br>
 ## 8f.) Delivery
 I will be giving a presentation over my findings!
- - All acquire and prepare .py files are uploaded for easy replication.
- - Trello board link
- - Presentation slides
+ - All acquire, prepare, wrangle, model, explore .py files are uploaded for easy replication.
  - This README 
  - Final notebook that documents a commented walkthrough of my process
 
@@ -196,9 +189,6 @@ We took a very large Zillow dataset and condensed it down to 52,200 rows to work
  -  Age was not a huge factor in value, but was helpful in our model's predictions.
 
  -  Using all of square footage, number of bedrooms, number of bathrooms, and age into a model performed better than the baseline. 
-
- -  All three counties have similar tax rates, but LA has the highest.
-
 
 
 
