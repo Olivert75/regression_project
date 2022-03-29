@@ -1,29 +1,29 @@
-import os
-import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
-from sklearn.feature_selection import SelectKBest, f_regression, RFE
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler
-from sklearn.linear_model import LinearRegression
+
 
 
 def remove_outlier(df):
     '''
-    This function will remove values that are 3 standard deviations above or below the mean for sqft, baths, beds, and tax_value.   (Our MVP values)
+    This function will remove values that are 3 standard deviations above or below the mean for sqft, baths, beds, and tax_value.
     '''
     new_df = df[(np.abs(stats.zscore(df['sqft'])) < 3)]
-    new_df = df[(np.abs(stats.zscore(df['baths'])) < 3)]
-    new_df = df[(np.abs(stats.zscore(df['beds'])) < 3)]
+    new_df = df[(np.abs(stats.zscore(df['number_bathroom'])) < 3)]
+    new_df = df[(np.abs(stats.zscore(df['number_bedroom'])) < 3)]
     new_df = df[(np.abs(stats.zscore(df['tax_value'])) < 3)]
     return new_df
 
 def clean_zillow (df):
     '''
-    Takes in a df and drops duplicates, nulls,rename columns, parcelid is changed to string.
-    Return a clean df
+    this function takes in an unclean zillow df and does the following:
+    1.) keeps only columns we need are considering. 'calculatedfinishedsquarefeet', 'bathroomcnt', 'bedroomcnt', 'taxvaluedollarcnt', 'yearbuilt','fips'
+    2.) drops nulls
+    3.) renames columns for ease of use.
+    4.) creates new columns that we may use.
+    return a clean df
     '''
     
     # drop duplicates
@@ -33,59 +33,21 @@ def clean_zillow (df):
     #  change parcelid to string, it is a uniqure identifier for parcels lots
     df['parcelid'] = df['parcelid'].astype('str')
     df['fips'] = df['fips'].astype('int')
+    #create a new column named 'age', which is 2017 minus the yearbuilt
+    df['age'] = 2017-df['yearbuilt']
+    #create a new column named 'county', map it with the code in fips
+    df['county'] = df['fips'].map({6037: 'Los Angeles', 6059: 'Orange', 6111: 'Ventura'})
     # rename columns
     df = df.rename(columns={'parcelid':'parcel_id',
                             'calculatedfinishedsquarefeet': 'sqft',
                             'bathroomcnt': 'number_bathroom',
                             'bedroomcnt': 'number_bedroom',
                             'taxvaluedollarcnt':'tax_value',
-                            'taxamount': 'tax_amount',
                             'fips':'geographic_code'})
-
-    return df
-
-def clean_zillow_data(df):
-    '''
-    this function takes in an unclean zillow df and does the following:
-    1.) keeps only columns we need are considering. 'calculatedfinishedsquarefeet', 'bathroomcnt', 'bedroomcnt', 'taxvaluedollarcnt', 'yearbuilt','fips'
-    2.) drops nulls
-    3.) renames columns for ease of use.
-    4.) creates new columns that we may use.
-    '''
-    #select features for df
-    features = ['parcelid','calculatedfinishedsquarefeet', 'bathroomcnt', 'bedroomcnt', 'taxvaluedollarcnt', 'yearbuilt','fips', 'taxamount']
-    df = df[features]
-    #  change parcelid to string, it is a uniqure identifier for parcels lots
-    df['parcelid'] = df['parcelid'].astype('str')
-    df['fips'] = df['fips'].astype('int')
-    #for the yearbuilt column, fill in nulls with 2017.
-    df['yearbuilt'].fillna(2017, inplace = True)
-    #create a new column named 'age', which is 2017 minus the yearbuilt
-    df['age'] = 2017-df['yearbuilt']
-    #calculate tax_rate by having taxamount divided by taxvaluedollarcnt
-    df['tax_rate'] = df['taxamount'] / df['taxvaluedollarcnt']
-    #drop duplicates in parcelid
-    df = df.drop_duplicates(subset=['parcelid'])
-    #rename columns for easier use
-    df = df.rename(columns={'parcelid':'parcel_id',
-                            'calculatedfinishedsquarefeet': 'sqft',
-                            'bathroomcnt': 'number_bathroom',
-                            'bedroomcnt': 'number_bedroom',
-                            'taxvaluedollarcnt':'tax_value',
-                            'taxamount': 'tax_amount',
-                            'fips':'geographic_code'
-        
-    })
-    
-    #set index
-    df = df.set_index('parcel_id')
-    #drop nulls in sqft and tax_value
-    df = df.dropna(subset=['sqft','tax_value','tax_amount'])
     #drop year_built, we can just use age.
     df = df.drop(columns=['yearbuilt'])
-    
+
     return df
-    
 
 def train_validate_test(df, target):
     '''
@@ -122,49 +84,6 @@ def train_validate_test(df, target):
     print(f'X_test -> {X_test.shape}                  y_test>{y_test.shape}') 
 
     return train, validate, test, X_train, y_train, X_validate, y_validate, X_test, y_test
-
-
-def scaled_df ( train_df , validate_df, test_df, scaler):
-    '''
-    Take in a 3 df and a type of scaler that you  want to  use. it will scale all columns
-    except object type. Fit a scaler only in train and tramnsform in train, validate and test.
-    returns  new dfs with the scaled columns.
-    scaler : MinMaxScaler() or RobustScaler(), StandardScaler() 
-    Example:
-    scaled_df( X_train , X_validate , X_test, RobustScaler())
-    This function is more flexible compare function above 
-    '''
-    #get all columns except object type
-    columns = train_df.select_dtypes(exclude='object').columns.tolist()
-    
-    # fit our scaler
-    scaler.fit(train_df[columns])
-    # get our scaled arrays
-    train_scaled = scaler.transform(train_df[columns])
-    validate_scaled= scaler.transform(validate_df[columns])
-    test_scaled= scaler.transform(test_df[columns])
-
-    # convert arrays to dataframes
-    train_scaled_df = pd.DataFrame(train_scaled, columns=columns).set_index([train_df.index.values])
-    validate_scaled_df = pd.DataFrame(validate_scaled, columns=columns).set_index([validate_df.index.values])
-    test_scaled_df = pd.DataFrame(test_scaled, columns=columns).set_index([test_df.index.values])
-
-    #plot
-    '''
-    for col in columns: 
-        plt.figure(figsize=(13, 6))
-        plt.subplot(121)
-        plt.hist(train_df[col], ec='black')
-        plt.title('Original')
-        plt.xlabel(col)
-        plt.ylabel("counts")
-        plt.subplot(122)
-        plt.hist(train_scaled_df[col],  ec='black')
-        plt.title('Scaled')
-        plt.xlabel(col)
-        plt.ylabel("counts")
-    '''
-    return train_scaled_df, validate_scaled_df, test_scaled_df
     
 def unique_cntvalues (df, max_unique):
     '''
@@ -192,18 +111,6 @@ def unique_cntvalues (df, max_unique):
         print(df[l].value_counts().sort_index())
         print("--------------------------- ")
         print(" ")
-
-
-def remove_outlier_tax(df):
-    '''
-    Another outlier removal function. This one will remove values that are 3 standard deviations above or below the mean for our MVP columns, and for our tax_value, tax_amounts.
-    '''
-    new_df = df[(np.abs(stats.zscore(df['sqft'])) < 3)]
-    new_df = df[(np.abs(stats.zscore(df['baths'])) < 3)]
-    new_df = df[(np.abs(stats.zscore(df['beds'])) < 3)]
-    new_df = df[(np.abs(stats.zscore(df['tax_value'])) < 3)]
-    new_df = df[(np.abs(stats.zscore(df['tax_amount'])) < 3)]
-    return new_df
 
 # plot distributions
 def distribution (df):
