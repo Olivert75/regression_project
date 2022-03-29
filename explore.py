@@ -106,12 +106,28 @@ def plot_residuals(y_validate):
     # plot the residuals for the best performing model
     plt.figure(figsize=(16,8))
     plt.axhline(label="No Error")
-
+    plt.scatter(y_validate.tax_value, y_validate.tax_value_pred_lm - y_validate.tax_value, 
+            alpha=.5, color="blue", s=100, label="Model: Linear Regression")
+    plt.scatter(y_validate.tax_value, y_validate.tax_value_pred_lars - y_validate.tax_value, 
+            alpha=.5, color="yellow", s=100, label="Model: LassoLars Regression")
+    plt.scatter(y_validate.tax_value, y_validate.tax_value_pred_glm - y_validate.tax_value, 
+            alpha=.5, color="green", s=100, label="Model: TweedieRegressor")
     plt.scatter(y_validate.tax_value, y_validate.tax_value_pred_lm3 - y_validate.tax_value, 
             alpha=.5, color="red", s=100, label="Model 3rd degree Polynomial")
     plt.legend()
     plt.xlabel("Actual tax Value")
     plt.ylabel("Residual/Error: Predicted Tax value - Actual")
     plt.title("Residuals")
+
+    plt.show()
+
+def plot_polynomial(y_test, y_validate):
+    plt.figure(figsize=(20,8))
+
+    sns.regplot(data=y_test, x=y_validate.tax_value, y=y_validate.tax_value_pred_lm3, 
+            scatter_kws={'color':'blue'}, line_kws={'color':'red'})
+    plt.xlabel("Actual Tax Value of Property", fontdict={'fontsize':15})
+    plt.ylabel("Predicted Tax Value of Property W/ Polynomial Regression Model", fontdict={'fontsize':15})
+    plt.title("Polynomial Regression Model", fontdict={'fontsize': 20})
 
     plt.show()
