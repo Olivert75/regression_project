@@ -47,7 +47,7 @@ def select_rfe (X_df, y_df, n_features, method):
     rfe = RFE(estimator=lm, n_features_to_select= n_features)
     rfe.fit_transform(X_df, y_df)
     top_rfe = list(X_df.columns[rfe.support_])
-    print(f'The top {n_features} selected feautures based on the the RFE class class are: {top_rfe}' )
+    print(f'The top {n_features} selected feautures based on the the RFE class are: {top_rfe}' )
     print(pd.Series(dict(zip(X_df.columns, rfe.ranking_))).sort_values())
     return top_rfe
 
